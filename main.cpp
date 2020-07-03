@@ -196,7 +196,7 @@ private:
                 throw std::runtime_error("failed to record command buffer!");
             }
         }
-        vkDestroyCommandPool(device, commandPool, nullptr);
+        //vkDestroyCommandPool(device, commandPool, nullptr);
     }
 
 
