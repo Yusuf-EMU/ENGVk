@@ -17,10 +17,11 @@
 #include <cstdint>
 #include <optional>
 #include <set>
+#include <thread>
 
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+const uint32_t WIDTH = 1280;
+const uint32_t HEIGHT = 800;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -30,6 +31,10 @@ const std::vector<const char*> validationLayers = {
 
 const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0
 };
 
 #ifdef NDEBUG
@@ -108,6 +113,10 @@ private:
     std::vector<VkImageView> swapChainImageViews;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
 
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkInstance instance;
@@ -136,7 +145,7 @@ private:
 
     void initVulkan() {
         createInstance();
-        setupDebugMessenger();
+        //setupDebugMessenger();
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
@@ -146,8 +155,9 @@ private:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
-        createCommandBuffer();
         createSemaphores();
+        createIndexBuffer();
+        createCommandBuffer();
     }
 
     void createSemaphores() {
@@ -174,11 +184,14 @@ private:
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-        vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
+        std::thread tone(vkAllocateCommandBuffers, device, &allocInfo, commandBuffers.data());
+        //vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
 
         if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
+
+        tone.join();
 
         for (size_t i = 0; i < commandBuffers.size(); i++) {
             VkCommandBufferBeginInfo beginInfo{};
@@ -202,9 +215,15 @@ private:
             vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
                 vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
+                
+                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+                std::cout << "this is a number: " << indexBuffer;
                 vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+                //vkCmdBindVertexBuffers(commandBuffers[i], 0, 3, &)
                 vkCmdDraw(commandBuffers[i], 3, 1, 3, 0);
+                vkCmdDraw(commandBuffers[i], 3, 1, 6, 0);
+                vkCmdDraw(commandBuffers[i], 3, 1, 9, 0);
+                vkCmdDraw(commandBuffers[i], 3, 1, 12, 0);
 
             vkCmdEndRenderPass(commandBuffers[i]); 
 
@@ -292,8 +311,81 @@ private:
         }
     }
 
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate buffer memory!");
+        }
+
+        vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    }
+
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("failed to find suitable memory type!");
+    }
+
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = commandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphicsQueue);
+
+        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    }
+
     void createGraphicsPipeline() {
         //DONT USE THIS IN MP GAMES UNTILL MEMORY LEAK IS FIXED
+        //Leak(bascicaly) fixed
         auto vertShaderCode = readFile("vert.spv");
         auto fragShaderCode = readFile("frag.spv");
 
@@ -493,6 +585,7 @@ private:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandBuffer();
+        createIndexBuffer();
     }
 
 
@@ -522,6 +615,9 @@ private:
         }
 
         vkDestroyCommandPool(device, commandPool, nullptr);
+
+        vkDestroyBuffer(device, indexBuffer, nullptr);
+        vkFreeMemory(device, indexBufferMemory, nullptr);
 
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 
@@ -780,6 +876,28 @@ private:
         if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("failed to create instance!");
         }
+    }
+
+    void createIndexBuffer() {
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), (size_t) bufferSize);
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+        copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+        
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
