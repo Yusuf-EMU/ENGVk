@@ -799,8 +799,10 @@ private:
             throw std::runtime_error("failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+        std::thread Hyper(vkGetSwapchainImagesKHR, device, swapChain, &imageCount, nullptr);
+        //vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);
+        Hyper.join();
         vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
 
         swapChainImageFormat = surfaceFormat.format;
@@ -955,14 +957,17 @@ private:
 
         uint32_t formatCount;
         tunea.join();
+        std::thread tunad(vkGetPhysicalDeviceSurfaceFormatsKHR, device, surface, &formatCount, nullptr);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
+        uint32_t presentModeCount;
+        tunad.join();
         if (formatCount != 0) {
             details.formats.resize(formatCount);
             vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
         }
 
-        uint32_t presentModeCount;
+        //uint32_t presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
         if (presentModeCount != 0) {
@@ -994,9 +999,11 @@ private:
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        std::thread den(vkEnumerateDeviceExtensionProperties, device, nullptr, &extensionCount, availableExtensions.data());
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
         std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+        den.join();
 
         for (const auto& extension : availableExtensions) {
             requiredExtensions.erase(extension.extensionName);
@@ -1010,12 +1017,16 @@ private:
         QueueFamilyIndices indices;
 
         uint32_t queueFamilyCount = 0;
+        //std::thread theen(vkGetPhysicalDeviceQueueFamilyProperties, device, &queueFamilyCount, nullptr);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
 
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        //theen.join();
+        std::thread thone(vkGetPhysicalDeviceQueueFamilyProperties, device, &queueFamilyCount, queueFamilies.data());
+        //vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
         int i = 0;
+        thone.join();
         for (const auto& queueFamily : queueFamilies) {
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 indices.graphicsFamily = i;
@@ -1055,8 +1066,10 @@ private:
 
     bool checkValidationLayerSupport() {
         uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::thread then(vkEnumerateInstanceLayerProperties, &layerCount, nullptr);
+        //vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
+        then.join();
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
