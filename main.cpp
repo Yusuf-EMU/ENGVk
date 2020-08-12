@@ -18,7 +18,7 @@
 #include <optional>
 #include <set>
 #include <thread>
-
+#include <future>
 
 const uint32_t WIDTH = 1280;
 const uint32_t HEIGHT = 800;
@@ -76,19 +76,6 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-struct Vertex {
-    glm::vec2 pos;
-    glm::vec3 color;
-
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-};
 class HelloTriangleApplication {
 public:
     void run() {
@@ -138,7 +125,7 @@ private:
         glfwInit();
 
         std::thread tone(glfwWindowHint, GLFW_CLIENT_API, GLFW_NO_API);
-        //glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         tone.join();
 
@@ -156,6 +143,7 @@ private:
         createRenderPass();
         createGraphicsPipeline();
         createFramebuffers();
+
         createCommandPool();
         createSemaphores();
         createIndexBuffer();
@@ -861,7 +849,7 @@ private:
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "ENGVK PreAlph";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
+        appInfo.pEngineName = "EngVK";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -901,16 +889,19 @@ private:
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, indices.data(), (size_t) bufferSize);
-        vkUnmapMemory(device, stagingBufferMemory);
+        std::thread tone(vkUnmapMemory, device, stagingBufferMemory);
+        //vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
 
         copyBuffer(stagingBuffer, indexBuffer, bufferSize);
 
+        tone.join();
         
-
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        std::thread ttwo(vkDestroyBuffer, device, stagingBuffer, nullptr);
+        //vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
+        ttwo.join();
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
