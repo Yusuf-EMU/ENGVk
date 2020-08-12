@@ -76,6 +76,19 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct Vertex {
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+};
 class HelloTriangleApplication {
 public:
     void run() {
@@ -124,8 +137,10 @@ private:
     void initWindow() {
         glfwInit();
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        std::thread tone(glfwWindowHint, GLFW_CLIENT_API, GLFW_NO_API);
+        //glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        tone.join();
 
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
     }
@@ -218,7 +233,6 @@ private:
                 throw std::runtime_error("failed to record command buffer!");
             }
         }
-        //vkDestroyCommandPool(device, commandPool, nullptr);
     }
 
 
@@ -491,9 +505,10 @@ private:
         if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
-
-        vkDestroyShaderModule(device, fragShaderModule, nullptr);
+        std::thread tone(vkDestroyShaderModule, device, fragShaderModule, nullptr);
+        //vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
+        tone.join();
     }
 
     VkShaderModule createShaderModule(const std::vector<char>& code) {
@@ -577,21 +592,26 @@ private:
 
 
     void cleanup() {
+        std::thread tone(vkDestroyDevice, device, nullptr);
+
         cleanupSwapChain();
 
-        vkDestroyDevice(device, nullptr);
+        tone.join();
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+            std::thread tone(vkDestroySemaphore, device, renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            tone.join();
         }
 
         for (auto imageView : swapChainImageViews) {
             vkDestroyImageView(device, imageView, nullptr);
         }
 
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        std::thread ttwo(vkDestroySwapchainKHR, device, swapChain, nullptr);
+        //vkDestroySwapchainKHR(device, swapChain, nullptr);
         vkDestroyDevice(device, nullptr);
+        ttwo.join();
 
         if (enableValidationLayers) {
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -601,10 +621,14 @@ private:
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
 
-        vkDestroyCommandPool(device, commandPool, nullptr);
+        std::thread jal(vkDestroyCommandPool, device, commandPool, nullptr);
+        //vkDestroyCommandPool(device, commandPool, nullptr);
 
-        vkDestroyBuffer(device, indexBuffer, nullptr);
+        std::thread jie(vkDestroyBuffer, device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
+
+        jal.join();
+        jie.join();
 
         vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 
@@ -674,8 +698,8 @@ private:
     }
 
     void createSurface() {
-        
-        glfwCreateWindowSurface(instance, window, nullptr, &surface);
+        std::thread tone(glfwCreateWindowSurface, instance, window, nullptr, &surface);
+        //glfwCreateWindowSurface(instance, window, nullptr, &surface);
         //VkCreateXcbSurfaceKHR(instance, );
         //VkDisplaySurfaceCreateInfoKHR createInfo{};
         //createInfo.sType = VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR;
@@ -688,6 +712,8 @@ private:
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
+
+        tone.join();
     }
 
     void createLogicalDevice() {
@@ -1050,9 +1076,10 @@ private:
                 }
             }
 
-            if (!layerFound) {
-                return false;
-            }
+            //if (!layerFound) {
+            //    return false;
+            //}
+            return layerFound;
         }
 
         return true;
