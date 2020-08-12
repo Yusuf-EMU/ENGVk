@@ -1,10 +1,14 @@
 //Compile with g++ main.cpp -std=c++17 -oENG -lvulkan -lglfw
 //Compile shaders with chmod +x compile.sh
+//Reminder first run may have no graphics
+
 #include <glm/glm.hpp>
 
+ 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+ 
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
