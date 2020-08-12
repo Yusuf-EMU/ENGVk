@@ -37,6 +37,7 @@ const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
 
+//Shows if we should use validation layes or not
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
@@ -76,7 +77,7 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-class HelloTriangleApplication {
+class ENGVK {
 public:
     void run() {
         initWindow();
@@ -312,9 +313,11 @@ private:
         }
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+        std::thread tane(vkGetBufferMemoryRequirements, device, buffer, &memRequirements);
+        //vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
+        tane.join();
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
@@ -1119,7 +1122,7 @@ private:
 };
 
 int main() {
-    HelloTriangleApplication app;
+    ENGVK app;
 
     try {
         app.run();
