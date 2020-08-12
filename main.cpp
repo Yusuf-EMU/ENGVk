@@ -1,14 +1,10 @@
 //Compile with g++ main.cpp -std=c++17 -oENG -lvulkan -lglfw
 //Compile shaders with chmod +x compile.sh
-//Reminder first run may have no graphics
-
 #include <glm/glm.hpp>
 
- 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
- 
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
@@ -690,8 +686,8 @@ private:
     }
 
     void createSurface() {
-        std::thread tone(glfwCreateWindowSurface, instance, window, nullptr, &surface);
-        //glfwCreateWindowSurface(instance, window, nullptr, &surface);
+        //std::thread tone(glfwCreateWindowSurface, instance, window, nullptr, &surface);
+        glfwCreateWindowSurface(instance, window, nullptr, &surface);
         //VkCreateXcbSurfaceKHR(instance, );
         //VkDisplaySurfaceCreateInfoKHR createInfo{};
         //createInfo.sType = VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR;
@@ -705,7 +701,7 @@ private:
             throw std::runtime_error("failed to create window surface!");
         }
 
-        tone.join();
+        //tone.join();
     }
 
     void createLogicalDevice() {
@@ -754,9 +750,10 @@ private:
         if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
             throw std::runtime_error("failed to create logical device!");
         }
-
-        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        std::thread tato(vkGetDeviceQueue, device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        //vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+        tato.join();
     }
     
     void createSwapChain() {
@@ -952,10 +949,12 @@ private:
 
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
         SwapChainSupportDetails details;
-
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+        
+        std::thread tunea(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, device, surface, &details.capabilities);
+        //vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
         uint32_t formatCount;
+        tunea.join();
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
         if (formatCount != 0) {
