@@ -625,9 +625,11 @@ private:
         jal.join();
         jie.join();
 
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+        std::thread thens(vkDestroySemaphore, device, renderFinishedSemaphore, nullptr);
+        //vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 
         vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+        thens.join();
 
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 
