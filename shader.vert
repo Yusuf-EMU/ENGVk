@@ -7,7 +7,6 @@ float pi = 3.14159;
 float fov = 70*pi/180;
 float f = 1/tan(fov/2);
 float aratio = 16/9;
-float PHI = 1.61803398874989484820459;
 float verts = 13;
 
 vec2 tripositions[3] = vec2[](
@@ -130,10 +129,6 @@ void DrawTri(float sizeX, float sizeY) {
     //fragColor = colors[gl_VertexIndex];
 }
 
-float gold_noise(in vec2 xy, in float seed){
-    return fract(tan(distance(xy*PHI, xy)*0.1)*xy.x) / 1000000000;
-}
-
 void DrawTri(float size) {
     gl_Position = vec4((tripositions[gl_VertexIndex] * size), 0.0, 1.0);
     fragColor = colorBuffer[gl_VertexIndex];
@@ -162,7 +157,6 @@ void Convert3dto2d() {
 }
 
 void DrawVbuffer(float size) {
-    vBuffer[gl_VertexIndex] += gold_noise(vBuffer[gl_VertexIndex], gl_VertexIndex);
     gl_Position = vec4(vBuffer[gl_VertexIndex]*size*projectionmat[gl_VertexIndex], 0.0, zBuffer[gl_VertexIndex]);
     fragColor = colorBuffer[gl_VertexIndex];
 }
