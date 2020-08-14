@@ -207,8 +207,7 @@ private:
 
                 vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
                 
-                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-                std::cout << "this is a number: " << indexBuffer;
+                vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16); 
                 vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
                 //vkCmdBindVertexBuffers(commandBuffers[i], 0, 3, &)
                 vkCmdDraw(commandBuffers[i], 3, 1, 3, 0);
@@ -544,6 +543,7 @@ private:
     void mainLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+            //std::async(std::launch::async, drawFrame);
             drawFrame();
         }
 
@@ -551,8 +551,8 @@ private:
 
     void cleanupSwapChain() {
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-            std::async(std::launch::async, vkDestroyFramebuffer, device, swapChainFramebuffers[i], nullptr);
-            //vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
+            //std::async(std::launch::async, vkDestroyFramebuffer, device, swapChainFramebuffers[i], nullptr);
+            vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
         std::thread tea(vkFreeCommandBuffers, device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
@@ -566,7 +566,8 @@ private:
         teaner.join();
 
         for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            vkDestroyImageView(device, swapChainImageViews[i], nullptr);
+            std::async(std::launch::async, vkDestroyImageView, device, swapChainImageViews[i], nullptr);
+            //vkDestroyImageView(device, swapChainImageViews[i], nullptr);
         }
 
         vkDestroySwapchainKHR(device, swapChain, nullptr);
@@ -595,9 +596,11 @@ private:
         tone.join();
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            std::thread tone(vkDestroySemaphore, device, renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-            tone.join();
+            std::async(std::launch::async, vkDestroySemaphore, device, renderFinishedSemaphores[i], nullptr);
+            //std::thread tone(vkDestroySemaphore, device, renderFinishedSemaphores[i], nullptr);
+            std::async(std::launch::async, vkDestroySemaphore, device, imageAvailableSemaphores[i], nullptr);
+            //vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            //tone.join();
         }
 
         for (auto imageView : swapChainImageViews) {
@@ -815,9 +818,11 @@ private:
         //vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
         swapChainImages.resize(imageCount);
         Hyper.join();
-        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+        std::thread ted(vkGetSwapchainImagesKHR, device, swapChain, &imageCount, swapChainImages.data());
+        //vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
 
         swapChainImageFormat = surfaceFormat.format;
+        ted.join();
         swapChainExtent = extent;
     }
 
