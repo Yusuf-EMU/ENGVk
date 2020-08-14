@@ -551,7 +551,8 @@ private:
 
     void cleanupSwapChain() {
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-            vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
+            std::async(std::launch::async, vkDestroyFramebuffer, device, swapChainFramebuffers[i], nullptr);
+            //vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
         std::thread tea(vkFreeCommandBuffers, device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
@@ -600,7 +601,8 @@ private:
         }
 
         for (auto imageView : swapChainImageViews) {
-            vkDestroyImageView(device, imageView, nullptr);
+            std::async(std::launch::async, vkDestroyImageView, device, imageView, nullptr);
+            //vkDestroyImageView(device, imageView, nullptr);
         }
 
         std::thread ttwo(vkDestroySwapchainKHR, device, swapChain, nullptr);
@@ -613,7 +615,8 @@ private:
         }
 
         for (auto framebuffer : swapChainFramebuffers) {
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
+            std::async(std::launch::async, vkDestroyFramebuffer, device, framebuffer, nullptr);
+            //vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
 
         std::thread jal(vkDestroyCommandPool, device, commandPool, nullptr);
