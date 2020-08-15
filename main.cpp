@@ -219,9 +219,10 @@ private:
 
             vkCmdEndRenderPass(commandBuffers[i]); 
 
-            if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to record command buffer!");
-            }
+            //if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+            //    throw std::runtime_error("failed to record command buffer!");
+            //}
+            //USE FOR DEBUG!
         }
     }
 
@@ -714,22 +715,10 @@ private:
     }
 
     void createSurface() {
-        //std::thread tone(glfwCreateWindowSurface, instance, window, nullptr, &surface);
         glfwCreateWindowSurface(instance, window, nullptr, &surface);
-        //VkCreateXcbSurfaceKHR(instance, );
-        //VkDisplaySurfaceCreateInfoKHR createInfo{};
-        //createInfo.sType = VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR;
-        //createInfo.pNext = NULL;
-        //createInfo.flags = 0;
-        //createInfo.displayMode;
-        //createInfo.transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        //createInfo.alphaMode = VK_DISPLAY_PLANE_ALPHA_PER_PIXEL_BIT_KHR;
-        //createInfo.imageExtent = VkExtent2D{WIDTH, HEIGHT};
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
-
-        //tone.join();
     }
 
     void createLogicalDevice() {
@@ -1108,10 +1097,10 @@ private:
 
     bool checkValidationLayerSupport() {
         uint32_t layerCount;
-        std::thread then(vkEnumerateInstanceLayerProperties, &layerCount, nullptr);
-        //vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        //std::thread then(vkEnumerateInstanceLayerProperties, &layerCount, nullptr);
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
-        then.join();
+        //then.join();
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
