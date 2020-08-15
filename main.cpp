@@ -318,8 +318,9 @@ private:
         //vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
-        tane.join();
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        tane.join();
+        //allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
@@ -351,23 +352,32 @@ private:
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+        std::thread tetd(vkAllocateCommandBuffers, device, &allocInfo, &commandBuffer);
+        //vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
         VkBufferCopy copyRegion{};
+        VkSubmitInfo submitInfo{};
+        tetd.join();
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        //beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        std::thread ttted(vkBeginCommandBuffer, commandBuffer, &beginInfo);
+        //vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        //VkBufferCopy copyRegion{};
         copyRegion.size = size;
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        ttted.join();
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
         vkEndCommandBuffer(commandBuffer);
 
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
+        //VkSubmitInfo submitInfo{};
+        //submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        //submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
         vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
@@ -629,6 +639,7 @@ private:
 
         std::thread jie(vkDestroyBuffer, device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
+        glfwDestroyWindow(window);
 
         jal.join();
         jie.join();
@@ -655,7 +666,7 @@ private:
 
         vkDestroyInstance(instance, nullptr);
 
-        glfwDestroyWindow(window);
+        //glfwDestroyWindow(window);
 
         glfwTerminate();
     }
@@ -1110,6 +1121,7 @@ private:
             for (const auto& layerProperties : availableLayers) {
                 if (strcmp(layerName, layerProperties.layerName) == 0) {
                     layerFound = true;
+                    return layerFound;
                     break;
                 }
             }
@@ -1160,4 +1172,4 @@ int main() {
     }
 
     return EXIT_SUCCESS;
-}
+}    
