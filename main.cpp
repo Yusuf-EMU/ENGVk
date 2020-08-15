@@ -57,9 +57,11 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
+    //if (func != nullptr) {
+    //    func(instance, debugMessenger, pAllocator);
+    //}
+    //Keep the commented section in for debuging else keep as is
+    func(instance, debugMessenger, pAllocator);
 }
 
 struct QueueFamilyIndices {
@@ -551,8 +553,8 @@ private:
 
     void cleanupSwapChain() {
         for (size_t i = 0; i < swapChainFramebuffers.size(); i++) {
-            //std::async(std::launch::async, vkDestroyFramebuffer, device, swapChainFramebuffers[i], nullptr);
-            vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
+            std::async(std::launch::async, vkDestroyFramebuffer, device, swapChainFramebuffers[i], nullptr);
+            //vkDestroyFramebuffer(device, swapChainFramebuffers[i], nullptr);
         }
 
         std::thread tea(vkFreeCommandBuffers, device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
@@ -848,16 +850,18 @@ private:
     }
 
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
-        if (capabilities.currentExtent.width != UINT32_MAX) {
-            return capabilities.currentExtent;
-        } else {
-            VkExtent2D actualExtent = {WIDTH, HEIGHT};
-
-            actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
-            actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
-
-            return actualExtent;
-        }
+        //if (capabilities.currentExtent.width != UINT32_MAX) {
+        //    return capabilities.currentExtent;
+        //} else {
+        //    VkExtent2D actualExtent = {WIDTH, HEIGHT};
+        //
+        //    actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
+        //    actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
+        //
+        //    return actualExtent;
+        //}
+        //USE BOTTOM FOR RELEASE AND TOP FOR DEBUG
+        return capabilities.currentExtent;
     }
 
     void createInstance() {
@@ -979,18 +983,26 @@ private:
 
         uint32_t presentModeCount;
         tunad.join();
-        if (formatCount != 0) {
-            details.formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-        }
+        //if (formatCount != 0) {
+        //    details.formats.resize(formatCount);
+        //    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        //}
+        //Keep this section in for debug only
+        details.formats.resize(formatCount);
+        std::thread ara(vkGetPhysicalDeviceSurfaceFormatsKHR, device, surface, &formatCount, details.formats.data());
+        //vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
 
         //uint32_t presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+        ara.join();
 
-        if (presentModeCount != 0) {
-            details.presentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-        }
+        //if (presentModeCount != 0) {
+        //    details.presentModes.resize(presentModeCount);
+        //    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+        //}
+        //Keep this section in for debug only
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
 
         return details;
     }
@@ -1001,11 +1013,13 @@ private:
         bool extensionsSupported = checkDeviceExtensionSupport(device);
 
         bool swapChainAdequate = false;
-        if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-            swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        }
-
+        //if (extensionsSupported) {
+        //    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        //    swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+        //}
+        //Use top for debug else use bottom
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 
         return indices.isComplete() && extensionsSupported && swapChainAdequate;
     }
