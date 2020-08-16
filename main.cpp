@@ -9,7 +9,6 @@
 #include <fstream>
 #include <stdexcept>
 #include <stdio.h>
-#include <algorithm>
 #include <vector>
 #include <stdio.h>
 #include <cstring>
@@ -22,8 +21,10 @@
 
 const uint32_t WIDTH = 1280;
 const uint32_t HEIGHT = 800;
+float deltaTime;
+clock_t t;
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+const int MAX_FRAMES_IN_FLIGHT = 3;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -41,7 +42,7 @@ const std::vector<uint16_t> indices = {
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+const bool enableValidationLayers = false;
 #endif
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -555,9 +556,14 @@ private:
 
     void mainLoop() {
         while (!glfwWindowShouldClose(window)) {
+            t = clock();
+            //std::thread ted(glfwPollEvents);
             glfwPollEvents();
             //std::async(std::launch::async, drawFrame);
             drawFrame();
+            //ted.join();
+            deltaTime = clock() - t;
+            printf("%f fps\n", (CLOCKS_PER_SEC / deltaTime));
         }
 
     }
@@ -672,12 +678,17 @@ private:
         glfwTerminate();
     }
 
+    uint32_t imageIndex;
     void drawFrame() {
-        uint32_t imageIndex;
-        vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        //uint32_t imageIndex;
+        ENGVK engvk;
+        std::thread tthred(vkAcquireNextImageKHR, std::ref(this), device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        //std::thread tthred(dF);
+        //vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        tthred.join();
 
         VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -987,7 +998,7 @@ private:
         //    details.formats.resize(formatCount);
         //    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
         //}
-        //Keep this section in for debug only
+        //THIS SECTION IS FOR DEBUG ONLY
         details.formats.resize(formatCount);
         std::thread ara(vkGetPhysicalDeviceSurfaceFormatsKHR, device, surface, &formatCount, details.formats.data());
         //vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
@@ -1000,7 +1011,7 @@ private:
         //    details.presentModes.resize(presentModeCount);
         //    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
         //}
-        //Keep this section in for debug only
+        //THIS SECTION IS FOR DEBUG ONLY
         details.presentModes.resize(presentModeCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
 
