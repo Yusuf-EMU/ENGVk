@@ -555,15 +555,22 @@ private:
     }
 
     void mainLoop() {
+        glfwPollEvents();
         while (!glfwWindowShouldClose(window)) {
+            //glfwPollEvents();
             t = clock();
             //std::thread ted(glfwPollEvents);
-            glfwPollEvents();
+            
             //std::async(std::launch::async, drawFrame);
-            drawFrame();
-            //ted.join();
-            deltaTime = clock() - t;
-            printf("%f fps\n", (CLOCKS_PER_SEC / deltaTime));
+            //drawFrame();
+            std::thread tedt([this] {
+                t = clock();
+                drawFrame();
+                deltaTime = clock() - t;
+                printf("%f fps\n", (CLOCKS_PER_SEC / deltaTime));
+            });
+            glfwPollEvents();
+            tedt.join();
         }
 
     }
@@ -677,8 +684,9 @@ private:
 
         glfwTerminate();
     }
-
+    uint32_t imageIndex;
     void drawFrame() {
+        //uint32_t imageIndex;
         std::thread tthread([this] {
             vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
         });
@@ -690,21 +698,27 @@ private:
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.commandBufferCount = 1;
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        submitInfo.signalSemaphoreCount = 1;
+        presentInfo.swapchainCount = 1;
         tthread.join();
 
         VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
+        //VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        //submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
+        //submitInfo.commandBufferCount = 1;
+        submitInfo.pWaitDstStageMask = waitStages;
         if(imageIndex > submitInfo.commandBufferCount) {
             imageIndex = 0;
         }
         submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
 
         VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
-        submitInfo.signalSemaphoreCount = 1;
+        //submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
         if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
@@ -718,7 +732,7 @@ private:
         presentInfo.pWaitSemaphores = signalSemaphores;
 
         VkSwapchainKHR swapChains[] = {swapChain};
-        presentInfo.swapchainCount = 1;
+        //presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
 
         presentInfo.pImageIndices = &imageIndex;
