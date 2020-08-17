@@ -47,21 +47,6 @@ vec2 projectionmat[] = vec2[](
     vec2(f*aratio, f)
 );
 
-vec2 vBuufet[] = vec2[](
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0),
-    vec2(0.0, 0.0)
-);
-
 vec3 colorBuffer[12] = vec3[](
     vec3(1.0, 0.0, 0.0),
     vec3(0.0, 1.0, 0.0),
