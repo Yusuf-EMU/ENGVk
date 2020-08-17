@@ -555,19 +555,14 @@ private:
     }
 
     void mainLoop() {
-        glfwPollEvents();
         while (!glfwWindowShouldClose(window)) {
-            //glfwPollEvents();
             t = clock();
-            //std::thread ted(glfwPollEvents);
-            
-            //std::async(std::launch::async, drawFrame);
-            //drawFrame();
             std::thread tedt([this] {
                 t = clock();
                 drawFrame();
                 deltaTime = clock() - t;
                 printf("%f fps\n", (CLOCKS_PER_SEC / deltaTime));
+
             });
             glfwPollEvents();
             tedt.join();
@@ -902,7 +897,7 @@ private:
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "EngVK";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
+        appInfo.apiVersion = VK_API_VERSION_1_1;
 
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
